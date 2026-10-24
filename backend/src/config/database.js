@@ -1,7 +1,13 @@
 ﻿const mongoose = require('mongoose')
+const path = require('path')
+// require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 
 async function connectDB() {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chatApp'
+    const mongoURI = process.env.MONGODB_URI
+
+    if (!mongoURI) {
+        throw new Error('MONGODB_URI is not configured')
+    }
 
     try {
         await mongoose.connect(mongoURI)

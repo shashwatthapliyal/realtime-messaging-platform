@@ -41,6 +41,16 @@ const userSchema = new mongoose.Schema({
     timestamps: true,
 })
 
+userSchema.methods.createJWT = async function () {
+    const token = jwt.sign(
+        { _id: this._id },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+    )
+    return token
+}
+
+
 const User = mongoose.model('User', userSchema)
 
 module.exports = User
