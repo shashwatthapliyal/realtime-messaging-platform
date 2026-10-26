@@ -44,13 +44,23 @@ router.patch('/user/:id',userAuth, async (req, res) => {
 })
 
 
-router.get('/feed', async (req, res) => {
-    try {
-        const feed = await User.find()
-        return res.status(200).json(feed)
-    }
-    catch (err) {
-        return res.status(400).send(err.message)
-    }
-})
+// router.get('/feed',userAuth, async (req, res) => {
+//     try {
+//         const loggedInUser=req.user
+//         const feed = await User.find({
+//             $or:[
+//                 {
+//                     fromUser:loggedInUser._id
+//                 },
+//                 {
+//                     toUserId:loggedInUser._id
+//                 }
+//             ]
+//         })
+//         return res.status(200).json(feed)
+//     }
+//     catch (err) {
+//         return res.status(400).send(err.message)
+//     }
+// })
 module.exports=router
