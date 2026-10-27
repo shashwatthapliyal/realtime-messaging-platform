@@ -1,4 +1,5 @@
 ﻿const mongoose = require('mongoose')
+const jwt = require('jsonwebtoken')
 
 function validateGender(gender) {
     return ['male', 'female', 'others'].includes(gender)
@@ -37,11 +38,21 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    
+        about:{
+            type:String,
+            trim:true
+        }
+    
 }, {
     timestamps: true,
 })
 
 userSchema.methods.createJWT = async function () {
+    if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured')
+    }
+
     const token = jwt.sign(
         { _id: this._id },
         process.env.JWT_SECRET,

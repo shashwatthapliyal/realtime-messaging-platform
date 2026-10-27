@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt')
 const express = require('express')
 
-const jwt=require('jsonwebtoken')
+const jwt = require('jsonwebtoken')
 const User = require('../model/user')
 const validateSignUpData = require('../utils/validation')
 const userAuth = require('../middleware/auth')
@@ -38,6 +38,9 @@ router.post('/login', async (req, res) => {
         if (!email || !password) {
             throw new Error('Email and password are required')
         }
+        if (!process.env.JWT_SECRET) {
+            throw new Error('JWT_SECRET is not configured')
+        }
 
         const user = await User.findOne({ email: String(email).toLowerCase().trim() })
 
@@ -56,10 +59,25 @@ router.post('/login', async (req, res) => {
                 process.env.JWT_SECRET,
                 { expiresIn: "1d" }
             )
-            res.cookie("token", token)
+            res.cookie("token", token, {
+                httpOnly: true,
+                sameSite: "lax",
+                maxAge: 24 * 60 * 60 * 1000
+            })
+
 
             // console.log(JSON.stringify(req.cookies))
-            return res.status(200).send('Login successful')
+            return res.json({
+                message: "Login successful",
+                user: {
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    gender: user.gender,
+                    age: user.age,
+                    email: user.email
+                }
+            }
+            )
         }
 
     }
@@ -69,12 +87,15 @@ router.post('/login', async (req, res) => {
 })
 
 router.post('/logout', (req, res) => {
-   try{
-     res.clearCookie("token")
-     res.send("Logged out ......")
-   }
-   catch{
-    res.status(400).send("Logout failed .....")
-   }
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            sameSite: "lax"
+        })
+        res.send("Logged out ......")
+    }
+    catch {
+        res.status(400).send("Logout failed .....")
+    }
 })
 module.exports = router

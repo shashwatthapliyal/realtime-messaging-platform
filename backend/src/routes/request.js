@@ -6,16 +6,27 @@ const express = require('express')
 const router = express.Router()
 
 
-const app = express()
-
-
 router.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
     try {
         const fromUserId = req.user._id
         const { status, toUserId } = req.params
 
+        if (!["interested", "ignored"].includes(status)) {
+            return res.status(400).send("Invalid connection request status")
+        }
+
         const toUser = await User.findById(toUserId)
         if (!toUser) throw new Error("User Dont exist")
+
+        const existingRequest = await ConnectionRequest.findOne({
+            $or: [
+                { fromUserId, toUserId: toUser._id },
+                { fromUserId: toUser._id, toUserId: fromUserId }
+            ]
+        })
+        if (existingRequest) {
+            return res.status(400).send("Connection request already exists")
+        }
 
         const connectionRequest = new ConnectionRequest({
             fromUserId,
@@ -50,7 +61,7 @@ router.get("/user/request/recieved",userAuth, async (req, res) => {
         res.json(recievedRequests)
     }
     catch (err) {
-        res.status(400).send("ERRRRR",err.message)
+        res.status(400).send("ERRRRR " + err.message)
     }
 })
 

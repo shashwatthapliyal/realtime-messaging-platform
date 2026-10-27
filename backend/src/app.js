@@ -1,8 +1,8 @@
 ﻿require("dotenv").config();
 const express = require('express')
+const cors = require('cors')
 
 const { connectDB } = require('./config/database')
-const User = require('./model/user')
 
 const cookieParser = require('cookie-parser')
 
@@ -14,7 +14,12 @@ const app = express()
 
 app.use(cookieParser())
 app.use(express.json())
-
+app.use(cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    credentials:true,
+    maxAge:600
+}))
 
 app.use("/",authRoutes)
 app.use("/",profileRoutes)
@@ -30,6 +35,5 @@ connectDB()
         console.log('Error in connecting to DB')
         console.log(err.message)
     })
-
 
 
