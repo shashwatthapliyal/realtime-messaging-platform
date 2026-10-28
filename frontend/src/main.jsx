@@ -6,9 +6,13 @@ import Login from './components/Login.jsx'
 import { Provider } from 'react-redux'
 import store from './utils.js/store.js'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import Body from './components/Body'
 import  Home  from './components/Home'
 import Feed from './components/Feed'
+import Connections from './components/Connections'
+import SettingsPage from './components/Settings'
+import MyProfile from './components/MyProfile'
+import Chat from './components/Chat'
+import Requests from './components/Requests'
 
 
 
@@ -18,22 +22,42 @@ const appRouter = createBrowserRouter([
     element: <Home />,
   },
   {
-    path:"/app",
-     children: [
+    path: "/app",
+    element: <App />,
+    children: [
       {
-        path: "/app",
-        element: <App />
+        index: true,
+        element: <Feed />,
       },
       {
         path: "feed",
-        element: <Feed />
-      }, 
-        {
+        element: <Feed />,
+      },
+      {
         path: "login",
-        element: <Login />
-      }, 
-    ]
-  }
+        element: <Login />,
+      },
+      {
+        path: "connections",
+        element: <Connections />,
+      },
+      {
+        path: "requests",
+        element: <Requests />,
+      },
+        {
+        path: "settings",
+        element: <SettingsPage />,
+      },  {
+        path: "profile",
+        element: <MyProfile />,
+      },
+      {
+        path: "chat/:id",
+        element: <Chat />,
+      },
+    ],
+  },
 ])
 
 

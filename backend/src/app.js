@@ -9,8 +9,14 @@ const cookieParser = require('cookie-parser')
 const authRoutes = require("./routes/auth");
 const profileRoutes=require("./routes/profile")
 const requestRoutes=require('./routes/request')
-
+const chatRoutes=require('./routes/chat')
+const http=require('http')
 const app = express()
+
+const initialiseSocket=require('./utils/socket')
+const server=http.createServer(app)
+
+initialiseSocket(server)
 
 app.use(cookieParser())
 app.use(express.json())
@@ -24,12 +30,12 @@ app.use(cors({
 app.use("/",authRoutes)
 app.use("/",profileRoutes)
 app.use("/",requestRoutes)
-
+app.use("/",chatRoutes)
 
 connectDB()
     .then(() => {
         console.log('Connected to DB')
-        app.listen(3000, () => console.log('Server is running on port 3000'))
+        server.listen(3000, () => console.log('Server is running on port 3000'))
     })
     .catch((err) => {
         console.log('Error in connecting to DB')

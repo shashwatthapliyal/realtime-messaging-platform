@@ -4,6 +4,7 @@ const User = require("../model/user")
 const userAuth = require('../middleware/auth')
 const express = require('express')
 const router = express.Router()
+const USER_SAFE_DATA = "firstName lastName photoUrl age gender about skills";
 
 
 router.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
@@ -49,7 +50,7 @@ router.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
 
 })
 
-router.get("/user/request/recieved",userAuth, async (req, res) => {
+router.get("/user/request/recieved", userAuth, async (req, res) => {
     try {
         const loggedInUser = req.user
 
@@ -57,7 +58,7 @@ router.get("/user/request/recieved",userAuth, async (req, res) => {
             toUserId: loggedInUser._id,
             status: "interested"
         })
-        .populate("fromUserId","firstName lastName age gender")
+            .populate("fromUserId", "firstName lastName age gender")
         res.json(recievedRequests)
     }
     catch (err) {
@@ -65,4 +66,40 @@ router.get("/user/request/recieved",userAuth, async (req, res) => {
     }
 })
 
+router.get("/user/connections", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user
+        const connectionRequest = await ConnectionRequest.find({
+            $and: [
+                {
+                    $or: [
+                        { toUserId: loggedInUser._id },
+                        { fromUserId: loggedInUser._id }
+
+                    ]
+                },
+                { status: "accepted" }
+            ]
+        })
+        .populate("fromUserId",USER_SAFE_DATA)
+        .populate("toUserId",USER_SAFE_DATA)
+
+        const data = connectionRequest.map((row) => {
+            if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
+                return row.toUserId;
+            }
+            return row.fromUserId;
+        })
+        // console.log(data)
+        res.json(
+            {
+                message: "Connections fetched....",
+                data
+            }
+        )
+    }
+    catch (err) {
+        res.status(401).send("ERR", err.message)
+    }
+})
 module.exports = router

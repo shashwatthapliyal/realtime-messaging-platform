@@ -1,46 +1,56 @@
-import React from 'react'
+import { useState } from 'react'
+import axios from 'axios'
 import { UserRound } from 'lucide-react'
+import { BASE_URL } from '@/assets/constants'
 
-const UserCard = ({ user }) => {
-    console.log(user)
-  const firstName = typeof user?.firstName === 'string' ? user.firstName.trim() : ''
-  const lastName = typeof user?.lastName === 'string' ? user.lastName.trim() : ''
-  const name = [firstName, lastName].filter(Boolean).join(' ')
-  const about = typeof user?.about === 'string' ? user.about.trim() : ''
-  const photoUrl = typeof user?.photoUrl === 'string' ? user.photoUrl.trim() : ''
+import { removeUserFromFeed } from '@/utils.js/feedSlice'
+import { useDispatch } from 'react-redux'
+
+
+function UserCard({ user }) {
+  const { firstName, lastName, about } = user
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
+  const initials = `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase()
+const dispatch=useDispatch()
+  async function sendConnectionRequest() {
+    setSending(true)
+    setError('')
+
+    try {
+      await axios.post(`${BASE_URL}/request/send/interested/${user._id}`, {}, { withCredentials: true })
+      setSent(true)
+      dispatch(removeUserFromFeed(user._id))
+    } catch (requestError) {
+      const message = requestError.response?.data
+      setError(typeof message === 'string' ? message : 'Could not send the request. Please try again.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
-    <article className="group isolate flex h-full min-w-0 flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white/75 shadow-[0_14px_40px_rgba(48,44,99,0.11)] ring-1 ring-violet-100/70 backdrop-blur-2xl transition-all duration-250 ease-out hover:-translate-y-1 hover:border-violet-200 hover:shadow-[0_22px_48px_rgba(65,56,130,0.18)] motion-reduce:transform-none motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-violet-100 via-indigo-50 to-white">
-        <div aria-hidden="true" className="absolute inset-0 grid place-items-center">
-          <div className="grid size-20 place-items-center rounded-[24px] border border-white/80 bg-white/65 text-indigo-300 shadow-sm backdrop-blur-xl">
-            <UserRound className="size-10" strokeWidth={1.5} />
-          </div>
+    <article className="w-full overflow-hidden rounded-2xl border border-[#dce8e4] bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md motion-reduce:transform-none">
+      <div className="flex items-center gap-3 border-b border-[#e8f0ed] bg-[#fbfdfc] px-5 py-4">
+        <div className="grid size-12 shrink-0 place-items-center rounded-full bg-[#e8f1ef] text-base font-semibold text-[#176b63]">{initials || <UserRound className="size-5" />}</div>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate font-semibold text-[#29413e]">{firstName} {lastName}</h2>
+          <p className="mt-0.5 text-sm text-[#8a9a97]">Connect with this member</p>
         </div>
-
-        {photoUrl && (
-          <img
-            src={photoUrl}
-            alt={name ? `${name} profile photo` : 'Profile photo'}
-            className="absolute inset-0 size-full object-cover transition-transform duration-250 ease-out group-hover:scale-[1.035] motion-reduce:transform-none motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-            onError={(event) => {
-              event.currentTarget.style.display = 'none'
-            }}
-          />
-        )}
       </div>
-
-      <div className="min-w-0 flex-1 border-t border-white/80 bg-white/60 px-5 py-5 sm:px-6 sm:py-6">
-        {name && (
-          <h2 className="break-words text-xl font-semibold capitalize leading-tight tracking-tight text-[#28234f] sm:text-2xl">
-            {name}
-          </h2>
-        )}
-        {about && (
-          <p className="mt-3 line-clamp-4 break-words text-sm leading-6 text-[#626982] sm:text-[15px]">
-            {about}
-          </p>
-        )}
+      <div className="px-5 py-4">
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#9aa9a5]">About</p>
+        <p className="min-h-12 text-sm leading-6 text-[#71827f]">{about || 'This person has not added a bio yet.'}</p>
+        {error && <p role="alert" className="mt-3 text-xs leading-5 text-[#a44f4d]">{error}</p>}
+        <button
+          type="button"
+          onClick={sendConnectionRequest}
+          disabled={sending || sent}
+          className="mt-4 w-full rounded-xl bg-[#176b63] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#12584f] focus:outline-none focus:ring-2 focus:ring-[#5da69d] focus:ring-offset-2 disabled:cursor-default disabled:bg-[#e8f1ef] disabled:text-[#176b63]"
+        >
+          {sending ? 'Sending request…' : sent ? 'Request sent' : 'Connect'}
+        </button>
       </div>
     </article>
   )
