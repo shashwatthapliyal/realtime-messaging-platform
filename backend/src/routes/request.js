@@ -50,6 +50,33 @@ router.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
 
 })
 
+router.post("/request/respond/:requestId/:status", userAuth, async (req, res) => {
+
+    try{
+        const {requestId,status}=req.params
+
+        if (!["accepted", "rejected"].includes(status)) {
+            return res.status(400).send("Invalid connection request status")
+        }
+        const request = await ConnectionRequest.findById(requestId)
+        if (!request) {
+            return res.status(404).send("Connection request not found")
+        }
+        request.status = status
+         const data = await request.save();
+
+        res.json({
+             message: "Connection request " + status,
+            data,
+        })
+    }
+    catch (err) {
+        res.status(400).send("ERR : " + err.message);
+    }
+})
+
+
+
 router.get("/user/request/recieved", userAuth, async (req, res) => {
     try {
         const loggedInUser = req.user

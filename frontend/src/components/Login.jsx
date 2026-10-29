@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Eye, EyeOff, MessageSquare } from 'lucide-react'
 import axios from 'axios'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { BASE_URL } from '@/assets/constants'
 import { addUser } from '@/utils.js/userSlice'
@@ -14,6 +14,7 @@ function Login() {
   const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
   const dispatch = useDispatch()
+const user=useSelector((store)=>store.user);
 
   async function handleSignIn(event) {
     event.preventDefault()
@@ -26,7 +27,8 @@ function Login() {
         { email, password },
         { withCredentials: true },
       )
-      dispatch(addUser(response.data.user))
+      if(Object.keys(user).length===0) dispatch(addUser(response.data.user))
+      // console.log(response.data.user)
       navigate('/app/feed')
     } catch (requestError) {
       const message = requestError.response?.data

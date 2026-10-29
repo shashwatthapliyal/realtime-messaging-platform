@@ -13,6 +13,7 @@ import SettingsPage from './components/Settings'
 import MyProfile from './components/MyProfile'
 import Chat from './components/Chat'
 import Requests from './components/Requests'
+import RequestCard from './components/RequestCard'
 
 
 
@@ -56,6 +57,7 @@ const appRouter = createBrowserRouter([
         path: "chat/:id",
         element: <Chat />,
       },
+    
     ],
   },
 ])

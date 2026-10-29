@@ -1,5 +1,5 @@
 const {Server}=require('socket.io')
-
+const Chat=require("../model/chat")
 
 
 const initializeSocket=(server)=>{
@@ -18,6 +18,30 @@ const initializeSocket=(server)=>{
             const roomId=[userId,targetUserId].sort().join("_")
             socket.join(roomId)
             console.log(roomId)
+        })
+
+        socket.on("sendMessage",async({firstName,userId,targetUserId,text})=>{
+            try{
+                const roomId=[userId,targetUserId].sort().join("_")
+
+                let chat =await Chat.findOne({
+                    participants:{$all:[userId,targetUserId]}
+                })
+                if(!chat){
+                    chat=new Chat({
+                        participants:[userId,targetUserId],messages:[]
+                    })
+                }
+                chat.messages.push({
+                    senderId:userId,
+                    text
+                })
+                await chat.save()
+                io.to(roomId).emit("messageReceived",{firstName,text,senderId:userId})
+            }
+            catch(err){
+                console.log(err.message)
+            }
         })
     })
 }

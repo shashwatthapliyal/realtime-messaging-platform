@@ -1,20 +1,47 @@
 import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import axios from 'axios'
 import { UsersRound } from 'lucide-react'
 import { BASE_URL } from '@/assets/constants'
+import { setConnections } from '@/utils.js/connectionsSlice'
 import ConnectionCard from './ConnectionCard'
 
 function Connections() {
-  const [connections, setConnections] = useState([])
-  const [loading, setLoading] = useState(true)
+  const dispatch = useDispatch()
+  const { items: connections, loaded } = useSelector((state) => state.connections)
+  const [loading, setLoading] = useState(!loaded)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    axios.get(`${BASE_URL}/user/connections`, { withCredentials: true })
-      .then((response) => setConnections(response.data.data || []))
-      .catch(() => setError('We could not load your connections right now.'))
-      .finally(() => setLoading(false))
-  }, [])
+    if (loaded) {
+      setLoading(false)
+      return
+    }
+
+    let isMounted = true
+
+    async function fetchConnections() {
+      setLoading(true)
+      setError('')
+      try {
+        const response = await axios.get(`${BASE_URL}/user/connections`, {
+          withCredentials: true,
+        })
+        dispatch(setConnections(response.data.data || []))
+      } catch {
+        if (isMounted) {
+          setError('We could not load your connections right now.')
+        }
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    fetchConnections()
+    return () => {
+      isMounted = false
+    }
+  }, [dispatch, loaded])
 
   return (
     <main className="min-h-[calc(100vh-108px)] bg-[#f5f8f7] px-5 py-8 text-[#172a2a] sm:px-8 sm:py-12 lg:px-10">

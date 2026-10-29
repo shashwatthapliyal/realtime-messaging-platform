@@ -1,17 +1,23 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createSocketConnection } from '@/utils/socket';
 import { BASE_URL } from '@/assets/constants';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
 
 const Chat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState([]);
 
-  const reciever = useLocation().state.user;
-  const { firstName, lastName, _id } = reciever;
-  const targetUserId = _id;
+  console.log(messages)
+  const targetUser = useLocation().state.user;
+
+  const targetUserId = targetUser._id;
+  const user = useSelector((store) => store.user)
+  console.log(user)
+
+  const socketRef = useRef(null)
 
   useEffect(() => {
     async function fetchChats() {
@@ -28,23 +34,34 @@ const Chat = () => {
     }
 
     fetchChats();
-  }, [targetUserId]);
+
+    const socket = createSocketConnection()
+    socketRef.current = socket
+
+    socket.emit("joinChat", {
+      userId: user._id,
+      targetUserId: targetUser._id,
+    })
+
+    socket.on("messageReceived", ({ firstName, text,senderId }) => {
+      setMessages((prev) => [...prev, { firstName, text,senderId}])
+    })
+    return () => {
+      socket.disconnect()
+      socketRef.current=null
+    }
+  }, [targetUserId, user._id]);
+
 
   async function sendMessage(messageText) {
-    if (!messageText.trim()) return;
-
     try {
-      const { data } = await axios.post(
-        `${BASE_URL}/chat/${targetUserId}/message`,
-        { text: messageText.trim() },
-        { withCredentials: true }
-      );
-
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
-      }
-
-      setNewMessage('');
+      socketRef.current.emit("sendMessage", {
+        firstName: user.firstName,
+        userId: user._id,
+        targetUserId,
+        text: messageText
+      })
+      setNewMessage("")
     } catch (err) {
       console.error('Failed to send message:', err.message);
     }
@@ -67,12 +84,12 @@ const Chat = () => {
         <div className="p-4">
           <div className="flex items-center gap-3 rounded-xl border border-[#D6E7E3] bg-[#E6F1EF] p-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#176F67] to-[#21877D] text-lg font-bold text-white shadow-sm">
-              {firstName?.charAt(0)}
+              {targetUser.firstName?.charAt(0)}
             </div>
 
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-[#203330]">
-                {firstName} {lastName}
+                {targetUser.firstName} {targetUser.lastName}
               </p>
               <p className="mt-1 flex items-center gap-1.5 text-xs text-[#176F67]">
                 <span className="h-2 w-2 rounded-full bg-[#176F67]" />
@@ -89,19 +106,19 @@ const Chat = () => {
         {/* Header */}
         <header className="flex items-center gap-3 border-b border-[#E6EEEB] bg-white px-5 py-4 md:px-7">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#176F67] to-[#21877D] text-lg font-bold text-white shadow-sm">
-            {firstName?.charAt(0)}
+            {targetUser.firstName?.charAt(0)}
           </div>
 
           <div className="min-w-0 flex-1">
             <h2 className="truncate font-semibold text-[#203330]">
-              {firstName} {lastName}
+              {targetUser.firstName} {targetUser.lastName}
             </h2>
             <p className="mt-0.5 text-xs text-[#718580]">
               Connectly conversation
             </p>
           </div>
 
-          
+
         </header>
 
         {/* Messages */}
@@ -110,11 +127,11 @@ const Chat = () => {
           {messages.length === 0 ? (
             <div className="m-auto flex max-w-sm flex-col items-center text-center">
               <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-[#D6E7E3] bg-[#E6F1EF] text-3xl font-bold text-[#176F67] shadow-sm">
-                {firstName?.charAt(0)}
+                {targetUser.firstName?.charAt(0)}
               </div>
 
               <h3 className="text-xl font-bold text-[#203330]">
-                Say hello to {firstName}
+                Say hello to {targetUser.firstName}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-[#718580]">
@@ -138,24 +155,21 @@ const Chat = () => {
                 return (
                   <div
                     key={msg._id || index}
-                    className={`flex w-full ${
-                      isMine ? 'justify-end' : 'justify-start'
-                    }`}
+                    className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'
+                      }`}
                   >
                     <div
-                      className={`max-w-[82%] break-words px-4 py-3 text-sm leading-6 shadow-sm sm:max-w-[70%] ${
-                        isMine
-                          ? 'rounded-2xl rounded-br-md bg-[#176F67] text-white'
-                          : 'rounded-2xl rounded-bl-md border border-[#E0EAE7] bg-white text-[#203330]'
-                      }`}
+                      className={`max-w-[82%] break-words px-4 py-3 text-sm leading-6 shadow-sm sm:max-w-[70%] ${isMine
+                        ? 'rounded-2xl rounded-br-md bg-[#176F67] text-white'
+                        : 'rounded-2xl rounded-bl-md border border-[#E0EAE7] bg-white text-[#203330]'
+                        }`}
                     >
                       <p>{msg.text}</p>
 
                       {msg.createdAt && (
                         <p
-                          className={`mt-1 text-right text-[10px] ${
-                            isMine ? 'text-[#D5EEEA]' : 'text-[#8A9D98]'
-                          }`}
+                          className={`mt-1 text-right text-[10px] ${isMine ? 'text-[#D5EEEA]' : 'text-[#8A9D98]'
+                            }`}
                         >
                           {new Date(msg.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
@@ -184,7 +198,7 @@ const Chat = () => {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               type="text"
-              placeholder={`Message ${firstName}...`}
+              placeholder={`Message ${targetUser.firstName}...`}
               className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-[#203330] outline-none placeholder:text-[#8A9D98]"
             />
 
