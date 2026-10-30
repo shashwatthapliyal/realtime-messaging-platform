@@ -39,7 +39,6 @@ const Chat = () => {
     socketRef.current = socket
 
     socket.emit("joinChat", {
-      userId: user._id,
       targetUserId: targetUser._id,
     })
 
@@ -56,8 +55,6 @@ const Chat = () => {
   async function sendMessage(messageText) {
     try {
       socketRef.current.emit("sendMessage", {
-        firstName: user.firstName,
-        userId: user._id,
         targetUserId,
         text: messageText
       })
