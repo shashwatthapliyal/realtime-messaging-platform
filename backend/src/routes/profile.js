@@ -1,9 +1,37 @@
+
+
+const cloudinary = require('../config/cloudinary')
+const upload = require('../middleware/upload')
 const express = require('express')
 const User = require('../model/user')
 const userAuth = require('../middleware/auth')
 const router = express.Router()
-const Connection=require('../model/connection')
+const Connection = require('../model/connection')
 const USER_SAFE_DATA = "firstName lastName photoUrl age gender about skills";
+
+
+
+async function uploadImage(req) {
+    const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: "profilePictures",
+                resource_type: "image"
+            },
+            (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+
+                resolve(result);
+            }
+        );
+        stream.end(req.file.buffer);
+        console.log("File uploaded")
+    })
+    return result
+}
+
 
 
 router.get("/profile", userAuth, (req, res) => {
@@ -86,21 +114,47 @@ router.get('/feed', userAuth, async (req, res) => {
             hideUsersFromFeed.add(req.toUserId.toString())
         })
 
-        const feed=await User.find({
-            $and:[
-              {
-                  _id:{$nin:Array.from(hideUsersFromFeed)}
-              },
-              {
-                _id:{$ne:loggedInUser._id}
-              }
+        const feed = await User.find({
+            $and: [
+                {
+                    _id: { $nin: Array.from(hideUsersFromFeed) }
+                },
+                {
+                    _id: { $ne: loggedInUser._id }
+                }
 
             ]
-        }).select(USER_SAFE_DATA).skip((page-1)*limit).limit(limit)
-         res.status(200).json(feed)
+        }).select(USER_SAFE_DATA).skip((page - 1) * limit).limit(limit)
+        res.status(200).json(feed)
     }
     catch (err) {
         return res.status(400).send(err.message)
+    }
+})
+
+
+
+router.patch("/profile/profilePicture", upload.single("profilePicture"), userAuth, async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file received" })
+        }
+        // console.log(req.file)
+        // res.json({ message: "Upload received" });
+
+        const result = await uploadImage(req)
+        const user = req.user;
+        user.profilePicture = result.secure_url
+        await user.save()
+        res.status(200).json({
+            message: "Image uploaded successfully",
+            imageUrl: result.secure_url,
+            publicId: result.public_id
+        });
+
+    }
+    catch (err) {
+        console.log(err.message)
     }
 })
 module.exports = router

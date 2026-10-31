@@ -42,7 +42,12 @@ const userSchema = new mongoose.Schema({
         about:{
             type:String,
             trim:true
-        }
+        },
+    profilePicture: {
+        type: String,
+        default: "https://res.cloudinary.com/dxjv7qg0k/image/upload/v1690240915/avatars/default-avatar_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1.png"
+    },
+   
     
 }, {
     timestamps: true,

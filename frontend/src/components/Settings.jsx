@@ -43,6 +43,7 @@ function Settings() {
                   {user.email || (user._id ? 'Email not available' : 'Your account is being restored.')}
                 </p>
               </div>
+              
               <Link
                 to="/app/profile"
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#dce8e4] px-4 py-2 text-sm font-semibold text-[#176b63] transition hover:bg-[#f5f8f7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b63]"
